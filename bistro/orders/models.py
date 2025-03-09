@@ -17,6 +17,7 @@ class Menu(models.Model):
 
 class Order(models.Model):
     STATUS_CHOICES = [
+        ("all", "All"),
         ("waiting", "Waiting"),
         ("ready", "Ready"),
         ("paid", "Paid"),
