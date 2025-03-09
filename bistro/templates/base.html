@@ -28,7 +28,7 @@
       <link href="{% static 'css/project.css' %}" rel="stylesheet" />
     {% endblock css %}
     <!-- Le javascript
-    ================================================== -->
+================================================== -->
     {# Placed at the top of the document so pages load faster with defer #}
     {% block javascript %}
       <!-- Bootstrap JS -->
@@ -64,6 +64,9 @@
                 </li>
                 <li class="nav-item">
                   <a class="nav-link" href="{% url 'about' %}">About</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'orders:manager' %}">Orders</a>
                 </li>
                 {% if request.user.is_authenticated %}
                   <li class="nav-item">
