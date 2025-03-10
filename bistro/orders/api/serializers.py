@@ -6,12 +6,25 @@ from bistro.orders.models import OrderItem
 
 
 class MenuSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Menu model.
+
+    Serializes all fields of the Menu model for use in API responses and requests.
+    """
+
     class Meta:
         model = Menu
         fields = "__all__"
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the OrderItem model.
+
+    Serializes the menu item, quantity, and total price of an order item.
+    The menu item is represented using the MenuSerializer.
+    """
+
     menu_item = MenuSerializer(read_only=True)
 
     class Meta:
@@ -20,6 +33,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Order model.
+
+    Serializes the order details, including the associated order items and total price.
+    The order items are represented using the OrderItemSerializer.
+    """
+
     order_items = OrderItemSerializer(many=True, read_only=True)
     total_price = serializers.DecimalField(
         max_digits=10,
