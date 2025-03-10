@@ -1,6 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
 
+from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import F
 from django.db.models import Q
 from django.db.models import Sum
@@ -18,7 +20,7 @@ from .models import Order
 from .models import OrderItem
 
 
-def order_management_view(request):  # noqa: C901, PLR0912
+def order_management_view(request):  # noqa: C901, PLR0912, PLR0915
     orders = Order.objects.all()
     total_paid = None
     show_search_orders = False
@@ -46,8 +48,16 @@ def order_management_view(request):  # noqa: C901, PLR0912
         elif "deleteorder" in request.POST:
             form = DeleteOrderForm(request.POST)
             if form.is_valid():
-                Order.objects.get(id=form.cleaned_data["order_id"]).delete()
-                return redirect("orders:manager")
+                try:
+                    order = Order.objects.get(id=form.cleaned_data["order_id"])
+                    order.delete()
+                    return redirect("orders:manager")
+                except ObjectDoesNotExist:
+                    messages.error(
+                        request,
+                        "The order you tried to delete does not exist.",
+                    )
+                    return redirect("orders:manager")  # or some
 
         elif "searchorder" in request.POST:
             form = SearchOrderForm(request.POST)
@@ -81,12 +91,23 @@ def order_management_view(request):  # noqa: C901, PLR0912
                 show_search_orders = True
                 search_mode = True
 
-        elif "updatestatus" in request.POST:
+        if "updatestatus" in request.POST:
             form = UpdateStatusForm(request.POST)
+
             if form.is_valid():
-                Order.objects.filter(id=form.cleaned_data["order_id"]).update(
-                    status=form.cleaned_data["status"],
-                )
+                order_id = form.cleaned_data["order_id"]
+                status = form.cleaned_data["status"]
+
+                try:
+                    order = Order.objects.get(id=order_id)
+                    order.status = status
+                    order.save()
+                    messages.success(request, "Order status updated successfully.")
+                except ObjectDoesNotExist:
+                    messages.error(
+                        request,
+                        "The order you tried to update does not exist.",
+                    )
                 return redirect("orders:manager")
 
         elif "totalpaidorders" in request.POST:
