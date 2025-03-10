@@ -1,12 +1,9 @@
 from datetime import datetime
 from decimal import Decimal
 
-from django.contrib import messages
-from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import F
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404
-from django.shortcuts import redirect
 from django.shortcuts import render
 from django.utils import timezone
 
@@ -18,6 +15,7 @@ from .forms import UpdateStatusForm
 from .handlers.add_order import handle_add_order
 from .handlers.delete_order import handle_delete_order
 from .handlers.search_order import handle_search_order
+from .handlers.update_status import handle_update_status
 from .models import Order
 
 
@@ -47,22 +45,6 @@ def order_management_view(request):
         "modals": get_modals(),
     }
     return render(request, "orders/order_management.html", context)
-
-
-def handle_update_status(request):
-    form = UpdateStatusForm(request.POST)
-    if form.is_valid():
-        order_id = form.cleaned_data["order_id"]
-        status = form.cleaned_data["status"]
-
-        try:
-            order = Order.objects.get(id=order_id)
-            order.status = status
-            order.save()
-            messages.success(request, "Order status updated successfully.")
-        except ObjectDoesNotExist:
-            messages.error(request, "The order you tried to update does not exist.")
-    return redirect("orders:manager")
 
 
 def handle_total_paid_orders(request):
