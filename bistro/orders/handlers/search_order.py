@@ -2,14 +2,28 @@ from datetime import datetime
 
 from django.db.models import F
 from django.db.models import Q
+from django.db.models import QuerySet
 from django.db.models import Sum
+from django.http import HttpRequest
 from django.utils import timezone
 
 from bistro.orders.forms import SearchOrderForm
 from bistro.orders.models import Order
 
 
-def handle_search_order(request):
+def handle_search_order(request: HttpRequest) -> tuple[QuerySet, bool, bool]:
+    """
+    Handles the search for orders based on the submitted form data.
+
+    Args:
+        request (HttpRequest): The HTTP request object containing form data.
+
+    Returns:
+        tuple[QuerySet, bool, bool]: A tuple containing:
+            - A QuerySet of filtered orders.
+            - A boolean indicating whether the form was valid.
+            - A boolean indicating whether the search was performed.
+    """
     form = SearchOrderForm(request.POST)
     if form.is_valid():
         table_number = form.cleaned_data.get("table_number")
