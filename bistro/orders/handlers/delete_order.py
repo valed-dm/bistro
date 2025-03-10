@@ -1,12 +1,24 @@
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpRequest
+from django.http import HttpResponse
 from django.shortcuts import redirect
 
 from bistro.orders.forms import DeleteOrderForm
 from bistro.orders.models import Order
 
 
-def handle_delete_order(request):
+def handle_delete_order(request: HttpRequest) -> HttpResponse:
+    """
+    Handles the deletion of an order based on the submitted form data.
+
+    Args:
+        request (HttpRequest): The HTTP request object containing form data.
+
+    Returns:
+        HttpResponse: Redirects to the manager view after attempting to delete
+        the order.
+    """
     form = DeleteOrderForm(request.POST)
     if form.is_valid():
         try:
