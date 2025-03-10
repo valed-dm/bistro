@@ -99,6 +99,12 @@ The following details how to deploy this application.
 
 [<img src="docs/images/img_18.png" width="500"/>]()
 
+## Обработка ошибок
+
+[<img src="docs/images/img_22.png" width="500"/>]()
+
+[<img src="docs/images/img_23.png" width="500"/>]()
+
 ## REST
 
 [<img src="docs/images/img_19.png" width="500"/>]()
