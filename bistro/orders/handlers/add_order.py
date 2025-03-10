@@ -1,13 +1,25 @@
 from django.contrib import messages
 from django.db import IntegrityError
 from django.db import transaction
+from django.http import HttpRequest
+from django.http import HttpResponse
 from django.shortcuts import redirect
 
 from bistro.orders.forms import OrderForm
 from bistro.orders.models import OrderItem
 
 
-def handle_add_order(request):
+def handle_add_order(request: HttpRequest) -> HttpResponse | None:
+    """
+    Handles the addition of a new order based on the submitted form data.
+
+    Args:
+        request (HttpRequest): The HTTP request object containing form data.
+
+    Returns:
+        Optional[HttpResponse]: Redirects to the manager view on success,
+        or None if the form is invalid or an error occurs.
+    """
     form = OrderForm(request.POST)
     if form.is_valid():
         try:
