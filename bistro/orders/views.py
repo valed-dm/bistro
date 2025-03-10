@@ -3,6 +3,8 @@ from decimal import Decimal
 
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
+from django.db import IntegrityError
+from django.db import transaction
 from django.db.models import F
 from django.db.models import Q
 from django.db.models import Sum
@@ -20,7 +22,7 @@ from .models import Order
 from .models import OrderItem
 
 
-def order_management_view(request):  # noqa: C901, PLR0912, PLR0915
+def order_management_view(request):
     orders = Order.objects.all()
     total_paid = None
     show_search_orders = False
@@ -28,12 +30,34 @@ def order_management_view(request):  # noqa: C901, PLR0912, PLR0915
 
     if request.method == "POST":
         if "addorder" in request.POST:
-            form = OrderForm(request.POST)
-            if form.is_valid():
-                order = form.save(commit=False)  # Create order but don't save yet
-                order.save()  # Save order first
+            return handle_add_order(request)
+        if "deleteorder" in request.POST:
+            return handle_delete_order(request)
+        if "searchorder" in request.POST:
+            orders, show_search_orders, search_mode = handle_search_order(request)
+        elif "updatestatus" in request.POST:
+            return handle_update_status(request)
+        elif "totalpaidorders" in request.POST:
+            total_paid = handle_total_paid_orders(request)
 
-                # Save selected items with their respective quantities
+    context = {
+        "orders": orders,
+        "total_paid": total_paid,
+        "show_search_orders": show_search_orders,
+        "search_mode": search_mode,
+        "modals": get_modals(),
+    }
+    return render(request, "orders/order_management.html", context)
+
+
+def handle_add_order(request):
+    form = OrderForm(request.POST)
+    if form.is_valid():
+        try:
+            with transaction.atomic():
+                order = form.save(commit=False)
+                order.save()
+
                 items = form.cleaned_data["items"]
                 quantities = form.cleaned_data["quantities"]
 
@@ -42,133 +66,125 @@ def order_management_view(request):  # noqa: C901, PLR0912, PLR0915
                     for item in items
                 ]
                 OrderItem.objects.bulk_create(order_items)
-
+                messages.success(
+                    request,
+                    f"Order for table {form.cleaned_data['table_number']} "
+                    f"added successfully.",
+                )
                 return redirect("orders:manager")
 
-        elif "deleteorder" in request.POST:
-            form = DeleteOrderForm(request.POST)
-            if form.is_valid():
-                try:
-                    order = Order.objects.get(id=form.cleaned_data["order_id"])
-                    order.delete()
-                    return redirect("orders:manager")
-                except ObjectDoesNotExist:
-                    messages.error(
-                        request,
-                        "The order you tried to delete does not exist.",
-                    )
-                    return redirect("orders:manager")  # or some
+        except IntegrityError as e:
+            messages.error(request, f"An error occurred while saving the order: {e!s}")
+        except Exception as e:  # noqa: BLE001
+            messages.error(request, f"An unexpected error occurred: {e!s}")
 
-        elif "searchorder" in request.POST:
-            form = SearchOrderForm(request.POST)
-            if form.is_valid():
-                table_number = form.cleaned_data.get("table_number")
-                status = form.cleaned_data.get("status")
-                search_date = form.cleaned_data.get("date")  # Mandatory date field
+    else:
+        messages.error(
+            request,
+            "Invalid form data. Please check the input and try again.",
+        )
+    return None
 
-                # Convert to datetime (midnight of the given date)
-                search_date_start = timezone.make_aware(
-                    datetime.combine(search_date, datetime.min.time()),
-                )
-                search_date_end = timezone.make_aware(
-                    datetime.combine(search_date, datetime.max.time()),
-                )
 
-                # Filters: Apply date and optional table number and status filters
-                filters = Q(created_at__range=[search_date_start, search_date_end])
+def handle_delete_order(request):
+    form = DeleteOrderForm(request.POST)
+    if form.is_valid():
+        try:
+            idx = form.cleaned_data["order_id"]
+            order = Order.objects.get(id=idx)
+            order.delete()
+            messages.info(request, f"The order #{idx} successfully deleted.")
+        except ObjectDoesNotExist:
+            messages.error(request, "The order you tried to delete does not exist.")
+    return redirect("orders:manager")
 
-                if table_number:
-                    filters &= Q(table_number=table_number)
 
-                if status != "all":
-                    filters &= Q(status=status)
+def handle_search_order(request):
+    form = SearchOrderForm(request.POST)
+    if form.is_valid():
+        table_number = form.cleaned_data.get("table_number")
+        status = form.cleaned_data.get("status")
+        search_date = form.cleaned_data.get("date")
 
-                orders = Order.objects.filter(filters).annotate(
-                    total_order_price=Sum(
-                        F("order_items__menu_item__price") * F("order_items__quantity"),
-                    ),
-                )
-                show_search_orders = True
-                search_mode = True
+        search_date_start = timezone.make_aware(
+            datetime.combine(search_date, datetime.min.time()),
+        )
+        search_date_end = timezone.make_aware(
+            datetime.combine(search_date, datetime.max.time()),
+        )
 
-        if "updatestatus" in request.POST:
-            form = UpdateStatusForm(request.POST)
+        filters = Q(created_at__range=[search_date_start, search_date_end])
 
-            if form.is_valid():
-                order_id = form.cleaned_data["order_id"]
-                status = form.cleaned_data["status"]
+        if table_number:
+            filters &= Q(table_number=table_number)
 
-                try:
-                    order = Order.objects.get(id=order_id)
-                    order.status = status
-                    order.save()
-                    messages.success(request, "Order status updated successfully.")
-                except ObjectDoesNotExist:
-                    messages.error(
-                        request,
-                        "The order you tried to update does not exist.",
-                    )
-                return redirect("orders:manager")
+        if status != "all":
+            filters &= Q(status=status)
 
-        elif "totalpaidorders" in request.POST:
-            form = TotalPaidOrdersForm(request.POST)
-            if form.is_valid():
-                date = form.cleaned_data["date"]
+        orders = Order.objects.filter(filters).annotate(
+            total_order_price=Sum(
+                F("order_items__menu_item__price") * F("order_items__quantity"),
+            ),
+        )
+        return orders, True, True
+    return Order.objects.all(), False, False
 
-                # Convert to datetime (midnight time)
-                start_datetime = datetime.combine(date, datetime.min.time())
-                end_datetime = datetime.combine(date, datetime.max.time())
 
-                # Ensure they're timezone-aware
-                start_datetime = (
-                    timezone.make_aware(start_datetime)
-                    if timezone.is_naive(start_datetime)
-                    else start_datetime
-                )
-                end_datetime = (
-                    timezone.make_aware(end_datetime)
-                    if timezone.is_naive(end_datetime)
-                    else end_datetime
-                )
-                total_paid = Order.objects.filter(
-                    status="paid",
-                    created_at__range=[start_datetime, end_datetime],
-                ).annotate(
-                    total_order_price=Sum(
-                        F("order_items__menu_item__price") * F("order_items__quantity"),
-                    ),
-                ).aggregate(total=Sum("total_order_price"))["total"] or Decimal("0.00")
+def handle_update_status(request):
+    form = UpdateStatusForm(request.POST)
+    if form.is_valid():
+        order_id = form.cleaned_data["order_id"]
+        status = form.cleaned_data["status"]
 
-    context = {
-        "orders": orders,
-        "total_paid": total_paid,
-        "show_search_orders": show_search_orders,
-        "search_mode": search_mode,
-        "modals": [
-            {"id": "addOrderModal", "form": OrderForm(), "title": "Add Order"},
-            {
-                "id": "deleteOrderModal",
-                "form": DeleteOrderForm(),
-                "title": "Delete Order",
-            },
-            {
-                "id": "searchOrderModal",
-                "form": SearchOrderForm(),
-                "title": "Search Order",
-            },
-            {
-                "id": "updateStatusModal",
-                "form": UpdateStatusForm(),
-                "title": "Update Order Status",
-            },
-            {
-                "id": "totalPaidOrdersModal",
-                "form": TotalPaidOrdersForm(),
-                "title": "Total Paid Orders",
-            },
-        ],
-    }
-    return render(request, "orders/order_management.html", context)
+        try:
+            order = Order.objects.get(id=order_id)
+            order.status = status
+            order.save()
+            messages.success(request, "Order status updated successfully.")
+        except ObjectDoesNotExist:
+            messages.error(request, "The order you tried to update does not exist.")
+    return redirect("orders:manager")
+
+
+def handle_total_paid_orders(request):
+    form = TotalPaidOrdersForm(request.POST)
+    if form.is_valid():
+        date = form.cleaned_data["date"]
+
+        start_datetime = timezone.make_aware(
+            datetime.combine(date, datetime.min.time()),
+        )
+        end_datetime = timezone.make_aware(datetime.combine(date, datetime.max.time()))
+
+        total_paid = Order.objects.filter(
+            status="paid",
+            created_at__range=[start_datetime, end_datetime],
+        ).annotate(
+            total_order_price=Sum(
+                F("order_items__menu_item__price") * F("order_items__quantity"),
+            ),
+        ).aggregate(total=Sum("total_order_price"))["total"] or Decimal("0.00")
+
+        return total_paid  # noqa: RET504
+    return None
+
+
+def get_modals():
+    return [
+        {"id": "addOrderModal", "form": OrderForm(), "title": "Add Order"},
+        {"id": "deleteOrderModal", "form": DeleteOrderForm(), "title": "Delete Order"},
+        {"id": "searchOrderModal", "form": SearchOrderForm(), "title": "Search Order"},
+        {
+            "id": "updateStatusModal",
+            "form": UpdateStatusForm(),
+            "title": "Update Order Status",
+        },
+        {
+            "id": "totalPaidOrdersModal",
+            "form": TotalPaidOrdersForm(),
+            "title": "Total Paid Orders",
+        },
+    ]
 
 
 def order_detail_view(request, order_id):
