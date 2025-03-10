@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Order #{{ order.id }}</h2>
+    <p>
+        <strong>Table Number:</strong> {{ order.table_number }}
+    </p>
+    <p>
+        <strong>Status:</strong> {{ order.get_status_display }}
+    </p>
+    <p>
+        <strong>Created At:</strong> {{ order.created_at|date:"Y-m-d H:i" }}
+    </p>
+    <p>
+        <strong>Last Updated:</strong> {{ order.updated_at|date:"Y-m-d H:i" }}
+    </p>
+    <h3>Courses:</h3>
+    <table class="table">
+        <thead>
+        <tr>
+            <th>Course</th>
+            <th>Quantity</th>
+            <th>Price per unit</th>
+            <th>Total Price</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in order.order_items.all %}
+        <tr>
+            <td>{{ item.menu_item.name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>${{ item.menu_item.price }}</td>
+            <td>${{ item.total_price }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <h4>Total Order Price: ${{ order.total_price }}</h4>
+    <a class="btn btn-primary" href="{% url 'orders:manager' %}">Back to Orders</a>
+</div>
+{% endblock content %}

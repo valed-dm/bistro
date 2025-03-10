@@ -48,3 +48,69 @@ Moved to [Live reloading and SASS compilation](https://cookiecutter-django.readt
 ## Deployment
 
 The following details how to deploy this application.
+
+## Управление заказами в кафе
+
+[<img src="docs/images/img_01.png" width="500"/>]()
+
+[<img src="docs/images/img_02.png" width="500"/>]()
+
+[<img src="docs/images/img_03.png" width="500"/>]()
+
+[<img src="docs/images/img_04.png" width="500"/>]()
+
+[<img src="docs/images/img_05.png" width="500"/>]()
+
+[<img src="docs/images/img_06.png" width="500"/>]()
+
+[<img src="docs/images/img_07.png" width="500"/>]()
+
+[<img src="docs/images/img_08.png" width="500"/>]()
+
+[<img src="docs/images/img_09.png" width="500"/>]()
+
+[<img src="docs/images/img_10.png" width="500"/>]()
+
+[<img src="docs/images/img_11.png" width="200"/>]()
+
+[<img src="docs/images/img_12.png" width="400"/>]()
+
+[<img src="docs/images/img_13.png" width="200"/>]()
+
+### Для запуска приложения:
+
+- создать локальную базу данных PostgreSQL
+- добавить .env файл для подключения к БД с произвольными значениями
+
+[<img src="docs/images/img_00.png" width="400"/>]()
+
+- создать суперпользователя
+- авторизоваться под его данными
+- в админке заполнить таблицу "меню" тестовыми значениями
+- тестировать по адресу: http://127.0.0.1:8000/
+
+[<img src="docs/images/img_14.png" width="200"/>]()
+
+[<img src="docs/images/img_15.png" width="200"/>]()
+
+[<img src="docs/images/img_16.png" width="500"/>]()
+
+[<img src="docs/images/img_17.png" width="500"/>]()
+
+[<img src="docs/images/img_18.png" width="500"/>]()
+
+## Обработка ошибок
+
+[<img src="docs/images/img_22.png" width="500"/>]()
+
+[<img src="docs/images/img_23.png" width="500"/>]()
+
+## REST
+
+[<img src="docs/images/img_19.png" width="500"/>]()
+
+[<img src="docs/images/img_20.png" width="500"/>]()
+
+## Тесты
+
+[<img src="docs/images/img_21.png" width="500"/>]()

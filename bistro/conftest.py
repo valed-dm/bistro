@@ -12,3 +12,8 @@ def _media_storage(settings, tmpdir) -> None:
 @pytest.fixture
 def user(db) -> User:
     return UserFactory()
+
+
+@pytest.fixture(autouse=True)
+def enable_db_access_for_all_tests(db):
+    pass

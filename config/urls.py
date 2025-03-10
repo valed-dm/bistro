@@ -23,8 +23,8 @@ urlpatterns = [
     # User management
     path("users/", include("bistro.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
-    # Your stuff: custom urls includes go here
-    # ...
+    # Orders management
+    path("orders/", include("bistro.orders.urls", namespace="orders")),
     # Media files
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
 ]
