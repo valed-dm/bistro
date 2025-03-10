@@ -17,6 +17,7 @@ from .forms import SearchOrderForm
 from .forms import TotalPaidOrdersForm
 from .forms import UpdateStatusForm
 from .handlers.add_order import handle_add_order
+from .handlers.delete_order import handle_delete_order
 from .models import Order
 
 
@@ -46,19 +47,6 @@ def order_management_view(request):
         "modals": get_modals(),
     }
     return render(request, "orders/order_management.html", context)
-
-
-def handle_delete_order(request):
-    form = DeleteOrderForm(request.POST)
-    if form.is_valid():
-        try:
-            idx = form.cleaned_data["order_id"]
-            order = Order.objects.get(id=idx)
-            order.delete()
-            messages.info(request, f"The order #{idx} successfully deleted.")
-        except ObjectDoesNotExist:
-            messages.error(request, "The order you tried to delete does not exist.")
-    return redirect("orders:manager")
 
 
 def handle_search_order(request):
