@@ -3,13 +3,26 @@ from decimal import Decimal
 
 from django.db.models import F
 from django.db.models import Sum
+from django.http import HttpRequest
 from django.utils import timezone
 
 from bistro.orders.forms import TotalPaidOrdersForm
 from bistro.orders.models import Order
 
 
-def handle_total_paid_orders(request):
+def handle_total_paid_orders(request: HttpRequest) -> Decimal | None:
+    """
+    Calculates the total amount of paid orders for a specific date based on the
+    submitted form data.
+
+    Args:
+        request (HttpRequest): The HTTP request object containing form data.
+
+    Returns:
+        Optional[Decimal]: The total amount of paid orders for the specified date
+        as a Decimal.
+        Returns None if the form is invalid.
+    """
     form = TotalPaidOrdersForm(request.POST)
     if form.is_valid():
         date = form.cleaned_data["date"]
