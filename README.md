@@ -98,3 +98,13 @@ The following details how to deploy this application.
 [<img src="docs/images/img_17.png" width="500"/>]()
 
 [<img src="docs/images/img_18.png" width="500"/>]()
+
+## REST
+
+[<img src="docs/images/img_19.png" width="500"/>]()
+
+[<img src="docs/images/img_20.png" width="500"/>]()
+
+## Тесты
+
+[<img src="docs/images/img_21.png" width="500"/>]()
