@@ -1,13 +1,9 @@
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render
 
-from .forms import DeleteOrderForm
-from .forms import OrderForm
-from .forms import SearchOrderForm
-from .forms import TotalPaidOrdersForm
-from .forms import UpdateStatusForm
 from .handlers.add_order import handle_add_order
 from .handlers.delete_order import handle_delete_order
+from .handlers.modals import get_modals
 from .handlers.search_order import handle_search_order
 from .handlers.total_paid import handle_total_paid_orders
 from .handlers.update_status import handle_update_status
@@ -40,24 +36,6 @@ def order_management_view(request):
         "modals": get_modals(),
     }
     return render(request, "orders/order_management.html", context)
-
-
-def get_modals():
-    return [
-        {"id": "addOrderModal", "form": OrderForm(), "title": "Add Order"},
-        {"id": "deleteOrderModal", "form": DeleteOrderForm(), "title": "Delete Order"},
-        {"id": "searchOrderModal", "form": SearchOrderForm(), "title": "Search Order"},
-        {
-            "id": "updateStatusModal",
-            "form": UpdateStatusForm(),
-            "title": "Update Order Status",
-        },
-        {
-            "id": "totalPaidOrdersModal",
-            "form": TotalPaidOrdersForm(),
-            "title": "Total Paid Orders",
-        },
-    ]
 
 
 def order_detail_view(request, order_id):
